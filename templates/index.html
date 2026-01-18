@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Customer Churn Prediction</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        /* Card Styling */
+        .glass-card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            overflow: hidden; /* Contains the content */
+            transition: all 0.5s ease;
+        }
+
+        .card-header-custom {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+
+        /* Floating Inputs */
+        .form-floating > .form-control, 
+        .form-floating > .form-select {
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+
+        .form-floating > .form-control:focus, 
+        .form-floating > .form-select:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.1);
+            background-color: #fff;
+        }
+
+        /* Buttons */
+        .btn-predict {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Right Panel (Results) */
+        .result-panel {
+            background: linear-gradient(to bottom right, #ffffff, #f8f9fa);
+            height: 100%;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInRight 0.8s ease-out;
+            border-left: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .chart-box {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Animations */
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Staggered Form Entry */
+        .form-group-anim {
+            opacity: 0;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Vertical Divider Logic for Desktop */
+        @media (min-width: 992px) {
+            .border-start-lg {
+                border-left: 1px solid #eaeaea;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid px-md-5">
+    <div class="row justify-content-center">
+        <div class="{{ 'col-xl-11' if prediction else 'col-xl-8 col-lg-9' }}">
+
+            <div class="card glass-card p-4">
+                <div class="row g-4">
+                    
+                    <div class="{{ 'col-lg-7' if prediction else 'col-12' }}">
+                        
+                        <div class="card-header-custom">
+                            <div class="icon-box"><i class="fas fa-chart-pie"></i></div>
+                            <h3 class="fw-bold">Customer Data</h3>
+                            {% if not prediction %}
+                            <p class="text-muted small">Fill in the details below to generate a prediction.</p>
+                            {% endif %}
+                        </div>
+
+                        <form method="POST" class="row g-3">
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-1">
+                                <div class="form-floating">
+                                    <input type="number" name="age" class="form-control" id="age" placeholder="Age" required>
+                                    <label for="age"><i class="fas fa-user me-2"></i>Age</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-1">
+                                <div class="form-floating">
+                                    <select name="gender" class="form-select" id="gender" required>
+                                        <option value="" selected disabled>Select Gender</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                    </select>
+                                    <label for="gender"><i class="fas fa-venus-mars me-2"></i>Gender</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-1">
+                                <div class="form-floating">
+                                    <input type="number" name="tenure" class="form-control" id="tenure" placeholder="Tenure" required>
+                                    <label for="tenure"><i class="fas fa-calendar-alt me-2"></i>Tenure (Months)</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-2">
+                                <div class="form-floating">
+                                    <input type="number" name="usage" class="form-control" id="usage" placeholder="Usage" required>
+                                    <label for="usage"><i class="fas fa-signal me-2"></i>Usage Frequency</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-2">
+                                <div class="form-floating">
+                                    <input type="number" name="support" class="form-control" id="support" placeholder="Support" required>
+                                    <label for="support"><i class="fas fa-headset me-2"></i>Support Calls</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-2">
+                                <div class="form-floating">
+                                    <input type="number" name="delay" class="form-control" id="delay" placeholder="Delay" required>
+                                    <label for="delay"><i class="fas fa-clock me-2"></i>Payment Delay (Days)</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-3">
+                                <div class="form-floating">
+                                    <select name="subscription" class="form-select" id="subscription" required>
+                                        <option value="" selected disabled>Select Type</option>
+                                        <option>Basic</option>
+                                        <option>Standard</option>
+                                        <option>Premium</option>
+                                    </select>
+                                    <label for="subscription"><i class="fas fa-ticket-alt me-2"></i>Subscription</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-3">
+                                <div class="form-floating">
+                                    <select name="contract" class="form-select" id="contract" required>
+                                        <option value="" selected disabled>Select Length</option>
+                                        <option>Monthly</option>
+                                        <option>Quarterly</option>
+                                        <option>Annual</option>
+                                    </select>
+                                    <label for="contract"><i class="fas fa-file-contract me-2"></i>Contract</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 form-group-anim delay-3">
+                                <div class="form-floating">
+                                    <input type="number" step="0.01" name="spend" class="form-control" id="spend" placeholder="Spend" required>
+                                    <label for="spend"><i class="fas fa-dollar-sign me-2"></i>Total Spend</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 form-group-anim delay-4">
+                                <div class="form-floating">
+                                    <input type="number" name="interaction" class="form-control" id="interaction" placeholder="Interaction" required>
+                                    <label for="interaction"><i class="fas fa-history me-2"></i>Days Since Last Interaction</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4 form-group-anim delay-5">
+                                <button class="btn btn-primary w-100 btn-predict">
+                                    Run Prediction <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>                        
+                        </form>
+                    </div>
+
+                    {% if prediction %}
+                    <div class="col-lg-5 ps-lg-4">
+                        <div class="result-panel text-center h-100">
+                            
+                            <div class="mb-4">
+                                <h5 class="text-uppercase text-muted fw-bold small ls-1">Prediction Analysis</h5>
+                                <h1 class="display-5 fw-bold {{ 'text-danger' if churn_prob|float > 50 else 'text-success' }}">
+                                    {{ prediction }}
+                                </h1>
+                                <p class="text-muted">Based on the provided customer metrics</p>
+                            </div>
+
+                            <div class="chart-box">
+                                <canvas id="probChart"></canvas>
+                            </div>
+
+                            <script>
+                                const stayProb = parseFloat("{{ stay_prob | default(0) }}");
+                                const churnProb = parseFloat("{{ churn_prob | default(0) }}");
+                                
+                                // Destroy old chart instance if exists (prevents overlap on re-render)
+                                // Note: Since page reloads on POST, this is fresh every time.
+                                
+                                new Chart(document.getElementById('probChart'), {
+                                    type: 'doughnut',
+                                    data: {
+                                        labels: ['Stay', 'Churn'],
+                                        datasets: [{
+                                            data: [stayProb, churnProb],
+                                            backgroundColor: ['#10b981', '#ef4444'],
+                                            borderWidth: 0,
+                                            hoverOffset: 10
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        cutout: '70%',
+                                        plugins: {
+                                            legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+                                        },
+                                        animation: {
+                                            animateScale: true,
+                                            animateRotate: true
+                                        }
+                                    }
+                                });
+                            </script>
+
+                            <div class="mt-4 w-100">
+                                <div class="alert {{ 'alert-danger' if churn_prob|float > 50 else 'alert-success' }} d-flex align-items-center justify-content-center border-0 small">
+                                    <i class="fas {{ 'fa-exclamation-triangle' if churn_prob|float > 50 else 'fa-check-circle' }} me-2"></i>
+                                    <strong>Confidence: {{ churn_prob if churn_prob|float > 50 else stay_prob }}%</strong>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                </div> </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
